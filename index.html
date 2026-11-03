@@ -93,11 +93,8 @@
     <div class="grid" id="checklist-grid"></div>
 
     <script>
-        // ===================================================
-        // 🛠️ あなたの設定（imagesフォルダ ＆ image1.png形式）に完全適合！
-        // ===================================================
         const TOTAL_CHARACTERS = 35; 
-        const IMAGE_FOLDER = "images"; // imagesフォルダに変更
+        const IMAGE_FOLDER = "images"; 
         const STORAGE_KEY = "fortnite_sprite_perfect_v19";
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -131,7 +128,6 @@
             imgContainer.className = 'img-container';
 
             const img = document.createElement('img');
-            // 💡 読み込み先を「images/image1.png」の形式に修正しました！
             img.src = IMAGE_FOLDER + "/image" + i + ".png";
             img.alt = "Sprite " + i;
             
@@ -173,7 +169,7 @@
             (function(charId, container) {
                 container.addEventListener('click', function() {
                     if (isObsMode) return;
-                    const isMax = spriteStates[charId] === 2 && spriteStates[charId] === 2 && spriteStates[charId] === 2;
+                    const isMax = spriteStates[charId][0] === 2 && spriteStates[charId][1] === 2 && spriteStates[charId][2] === 2;
                     const target = isMax ? 0 : 2; 
                     spriteStates[charId] = [target, target, target];
                     saveAndRefreshLocal(charId);
@@ -184,53 +180,66 @@
             grid.appendChild(itemDiv);
         }
 
+        updateMasterCount();
+
         function saveAndRefreshLocal(id) {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(spriteStates));
             refreshItemDisplay(id);
-            updateGlobalCounter();
-            if (isFilterActive) applyFilter();
+            updateMasterCount();
+            applyFilter();
         }
 
         function refreshItemDisplay(id) {
             const states = spriteStates[id];
-            const element = itemElements[id];
+            const itemDiv = itemElements[id];
             const boxes = boxElements[id];
-            if (!element || !boxes) return;
 
-            let hasAnyActive = false;
-            let hasMaxActive = false;
+            let anyActive = false;
+            let hasMax = true;
 
             for (let j = 0; j < 3; j++) {
-                const state = states[j];
+                const val = states[j];
                 const box = boxes[j];
 
-                box.className = 'sub-box color-' + j;
-                
-                if (state === 1) {
+                box.classList.remove('checked-status', 'max-status');
+                box.textContent = '';
+
+                if (val === 1) {
                     box.classList.add('checked-status');
-                    box.textContent = "✓";
-                    hasAnyActive = true;
-                } else if (state === 2) {
-                    box.classList.add('checked-status', 'max-status');
-                    box.textContent = "👑";
-                    hasAnyActive = true;
-                    hasMaxActive = true;
+                    box.textContent = '✓';
+                    anyActive = true;
+                    hasMax = false;
+                } else if (val === 2) {
+                    box.classList.add('max-status');
+                    box.textContent = '★';
+                    anyActive = true;
                 } else {
-                    box.textContent = j === 0 ? "普" : j === 1 ? "金" : "呪";
+                    hasMax = false;
                 }
             }
 
-            if (hasMaxActive) element.className = 'item any-active has-max';
-            else if (hasAnyActive) element.className = 'item any-active';
-            else element.className = 'item';
+            itemDiv.classList.remove('any-active', 'has-max');
+            if (hasMax) {
+                itemDiv.classList.add('has-max');
+            } else if (anyActive) {
+                itemDiv.classList.add('any-active');
+            }
         }
 
-        function updateGlobalCounter() {
-            if (isObsMode) return;
-            let gatheredCount = 0;
+        function updateMasterCount() {
+            let count = 0;
             for (let i = 1; i <= TOTAL_CHARACTERS; i++) {
-                if (spriteStates[i]) {
-                    const isGathered = spriteStates[i].some(s => s > 0);
-                    if (isGathered) gatheredCount++;
+                const states = spriteStates[i];
+                if (states[0] === 2 && states[1] === 2 && states[2] === 2) {
+                    count++;
                 }
             }
+            masterCountEl.textContent = count;
+        }
+
+        function toggleFilter() {
+            isFilterActive = !isFilterActive;
+            const btn = document.getElementById('filter-btn');
+            if (isFilterActive) {
+                btn.classList.add('active');
+            } else {
