@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>フォートナイト 精霊コレクション 同期システム</title>
     <style>
-        /* 基本スタイル（管理画面用） */
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
             background-color: #121218;
@@ -17,171 +16,74 @@
             align-items: center;
         }
 
-        /* 👑 OBS配信用モード（URLに ?mode=obs がある時）のスタイル */
         body.obs-mode {
             background-color: transparent !important;
             padding: 0;
         }
-        body.obs-mode .header { display: none !important; }
-        body.obs-mode .controls { display: none !important; }
+        body.obs-mode .header, body.obs-mode .controls { display: none !important; }
         body.obs-mode .grid { max-width: 100%; gap: 10px; }
         body.obs-mode .item { background-color: rgba(26, 26, 36, 0.7); }
         body.obs-mode .item.hidden-by-filter { display: flex !important; }
 
-        .header {
-            width: 100%;
-            max-width: 600px;
-            text-align: center;
-            margin-bottom: 10px;
-        }
+        .header { width: 100%; max-width: 600px; text-align: center; margin-bottom: 10px; }
+        .header h1 { font-size: 1.5rem; margin: 10px 0 5px 0; letter-spacing: 1px; }
+        .counter { font-size: 1.1rem; font-weight: bold; color: #aaaaaa; margin-bottom: 15px; }
+        .counter span { color: #ffd700; }
 
-        .header h1 {
-            font-size: 1.5rem;
-            margin: 10px 0 5px 0;
-            letter-spacing: 1px;
-        }
-
-        .counter {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #aaaaaa;
-            margin-bottom: 15px;
-        }
-        .counter span {
-            color: #ffd700;
-        }
-
-        .controls {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 20px;
-            width: 100%;
-            max-width: 500px;
-        }
-
+        .controls { display: flex; justify-content: center; margin-bottom: 20px; width: 100%; max-width: 500px; }
         .btn {
-            width: 100%;
-            max-width: 200px;
-            background-color: #222230;
-            border: 1px solid #444455;
-            color: #ffffff;
-            padding: 10px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-weight: bold;
+            width: 100%; max-width: 200px; background-color: #222230; border: 1px solid #444455; color: #ffffff;
+            padding: 10px; border-radius: 6px; font-size: 0.9rem; cursor: pointer; font-weight: bold;
         }
         .btn:hover { background-color: #333345; }
-        .btn.active {
-            background-color: #00d2ff;
-            border-color: #00d2ff;
-            color: #121218;
-        }
+        .btn.active { background-color: #00d2ff; border-color: #00d2ff; color: #121218; }
 
         .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-            gap: 12px;
-            width: 100%;
-            max-width: 800px;
-            padding-bottom: 30px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 12px; width: 100%; max-width: 800px; padding-bottom: 30px;
         }
 
         .item {
-            position: relative;
-            background-color: #1a1a24;
-            border: 2px solid #333344;
-            border-radius: 8px;
-            padding: 6px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: all 0.2s ease;
-            user-select: none;
+            position: relative; background-color: #1a1a24; border: 2px solid #333344;
+            border-radius: 8px; padding: 6px; display: flex; flex-direction: column; align-items: center;
         }
-
         .item.hidden-by-filter { display: none !important; }
 
         .img-container {
-            width: 100%;
-            aspect-ratio: 1 / 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            margin-bottom: 4px;
-            cursor: pointer;
+            width: 100%; aspect-ratio: 1 / 1; display: flex; justify-content: center;
+            align-items: center; position: relative; margin-bottom: 4px; cursor: pointer;
         }
-
         .img-container img {
-            width: 95%;
-            height: 95%;
-            object-fit: contain;
-            filter: grayscale(80%) brightness(35%);
-            transition: all 0.2s ease;
+            width: 95%; height: 95%; object-fit: contain;
+            filter: grayscale(80%) brightness(35%); transition: all 0.2s ease;
         }
 
         .item.any-active .img-container img { filter: grayscale(40%) brightness(75%); }
         .item.has-max .img-container img { filter: grayscale(0%) brightness(110%); }
+        .item.has-max { border-color: #ffd700; background-color: #2a2415; box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
 
-        /* レベルマックス（👑）がいる時のカード枠のエフェクト */
-        .item.has-max {
-            border-color: #ffd700;
-            background-color: #2a2415;
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-        }
-
-        .img-container .fallback-text {
-            font-size: 0.9rem;
-            font-weight: bold;
-            color: #555566;
-        }
+        .img-container .fallback-text { font-size: 0.9rem; font-weight: bold; color: #555566; }
         .item.any-active .fallback-text { color: #ffffff; }
         .item.has-max .fallback-text { color: #ffd700; }
 
-        .sub-boxes {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            gap: 4px;
-        }
-
+        .sub-boxes { display: flex; justify-content: space-between; width: 100%; gap: 4px; }
         .sub-box {
-            flex: 1;
-            height: 24px;
-            border-radius: 4px;
-            border: 1px solid #444;
-            background-color: #22222d;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 11px;
-            font-weight: bold;
-            color: rgba(255,255,255,0.25);
-            transition: all 0.15s ease;
+            flex: 1; height: 24px; border-radius: 4px; border: 1px solid #444; background-color: #22222d;
+            cursor: pointer; display: flex; justify-content: center; align-items: center;
+            font-size: 11px; font-weight: bold; color: rgba(255,255,255,0.25);
         }
 
-        /* 各状態のカラー変遷 */
         .sub-box.color-0.checked-status { background-color: #006699; border-color: #00d2ff; color: #fff; } 
         .sub-box.color-1.checked-status { background-color: #887000; border-color: #ffd700; color: #fff; } 
         .sub-box.color-2.checked-status { background-color: #660088; border-color: #d000ff; color: #fff; } 
-
-        .sub-box.max-status {
-            background-color: #2a2415 !important;
-            border-color: #ffd700 !important;
-            box-shadow: 0 0 5px #ffd700;
-            color: #ffd700 !important;
-            font-size: 12px;
-        }
+        .sub-box.max-status { background-color: #2a2415 !important; border-color: #ffd700 !important; color: #ffd700 !important; font-size: 12px; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <h1>コレクション</h1>
-        <div class="counter">TOTAL: <span id="master-count">0</span> / <span id="total-count">0</span></div>
+        <div class="counter">TOTAL: <span id="master-count">0</span> / <span id="total-count">35</span></div>
     </div>
 
     <div class="controls">
@@ -192,17 +94,15 @@
 
     <script>
         // ===================================================
-        // 🛠️ 精霊の総数とフォルダ設定（1〜35番）
+        // 🛠️ あなたの設定（imagesフォルダ ＆ image1.png形式）に完全適合！
         // ===================================================
-        const TOTAL_CHARACTERS = 35; // 💡 24種類から35種類へアップデート！
-        const IMAGE_FOLDER = "image";
-        const STORAGE_KEY = "fortnite_sprite_sync_v15";
+        const TOTAL_CHARACTERS = 35; 
+        const IMAGE_FOLDER = "images"; // imagesフォルダに変更
+        const STORAGE_KEY = "fortnite_sprite_perfect_v19";
 
         const urlParams = new URLSearchParams(window.location.search);
         const isObsMode = urlParams.get('mode') === 'obs';
-        if (isObsMode) {
-            document.body.classList.add('obs-mode');
-        }
+        if (isObsMode) document.body.classList.add('obs-mode');
 
         let spriteStates = {}; 
         let isFilterActive = false;
@@ -217,7 +117,7 @@
 
         const grid = document.getElementById('checklist-grid');
         const masterCountEl = document.getElementById('master-count');
-        document.getElementById('total-count').textContent = TOTAL_CHARACTERS * 3;
+        document.getElementById('total-count').textContent = TOTAL_CHARACTERS;
 
         const itemElements = {};
         const boxElements = {};
@@ -231,7 +131,8 @@
             imgContainer.className = 'img-container';
 
             const img = document.createElement('img');
-            img.src = IMAGE_FOLDER + "/" + i + ".png";
+            // 💡 読み込み先を「images/image1.png」の形式に修正しました！
+            img.src = IMAGE_FOLDER + "/image" + i + ".png";
             img.alt = "Sprite " + i;
             
             img.onerror = function() {
@@ -272,7 +173,7 @@
             (function(charId, container) {
                 container.addEventListener('click', function() {
                     if (isObsMode) return;
-                    const isMax = spriteStates[charId][0] === 2 && spriteStates[charId][1] === 2 && spriteStates[charId][2] === 2;
+                    const isMax = spriteStates[charId] === 2 && spriteStates[charId] === 2 && spriteStates[charId] === 2;
                     const target = isMax ? 0 : 2; 
                     spriteStates[charId] = [target, target, target];
                     saveAndRefreshLocal(charId);
@@ -283,7 +184,6 @@
             grid.appendChild(itemDiv);
         }
 
-        // 状態保存とリフレッシュ
         function saveAndRefreshLocal(id) {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(spriteStates));
             refreshItemDisplay(id);
@@ -291,7 +191,6 @@
             if (isFilterActive) applyFilter();
         }
 
-        // 表示の更新
         function refreshItemDisplay(id) {
             const states = spriteStates[id];
             const element = itemElements[id];
@@ -301,3 +200,37 @@
             let hasAnyActive = false;
             let hasMaxActive = false;
 
+            for (let j = 0; j < 3; j++) {
+                const state = states[j];
+                const box = boxes[j];
+
+                box.className = 'sub-box color-' + j;
+                
+                if (state === 1) {
+                    box.classList.add('checked-status');
+                    box.textContent = "✓";
+                    hasAnyActive = true;
+                } else if (state === 2) {
+                    box.classList.add('checked-status', 'max-status');
+                    box.textContent = "👑";
+                    hasAnyActive = true;
+                    hasMaxActive = true;
+                } else {
+                    box.textContent = j === 0 ? "普" : j === 1 ? "金" : "呪";
+                }
+            }
+
+            if (hasMaxActive) element.className = 'item any-active has-max';
+            else if (hasAnyActive) element.className = 'item any-active';
+            else element.className = 'item';
+        }
+
+        function updateGlobalCounter() {
+            if (isObsMode) return;
+            let gatheredCount = 0;
+            for (let i = 1; i <= TOTAL_CHARACTERS; i++) {
+                if (spriteStates[i]) {
+                    const isGathered = spriteStates[i].some(s => s > 0);
+                    if (isGathered) gatheredCount++;
+                }
+            }
